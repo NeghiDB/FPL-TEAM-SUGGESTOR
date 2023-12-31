@@ -1,9 +1,13 @@
 const express = require('express');
 const mysql = require('mysql2/promise');
+
+const bcrypt = require('bcrypt');
+
 require('dotenv').config(); // Load environment variables from .env file
 
+
 const app = express();
-const port = 3000;
+const port = 7080;
 
 // MySQL database connection pool
 const pool = mysql.createPool({
@@ -22,14 +26,30 @@ app.use(express.json());
 
 // Example CRUD operations
 
-// Create operation
+/* // Create operation
 app.post('/users', async (req, res) => {
   const { username, email, password } = req.body;
   const [rows] = await pool.execute('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, password]);
   res.json(rows);
+}); */
+
+// Create operation
+app.post('/users', async (req, res) => {
+  console.log(req.body);
+  const { username, email, password } = req.body;
+  const hashedPassword = await bcrypt.hash(password, 10); // Hash the password
+
+  try {
+    const [rows] = await pool.execute('INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)', [username, email, hashedPassword]);
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
-// Read operation
+
+/* // Read operation
 app.get('/users', async (req, res) => {
   const [rows] = await pool.execute('SELECT * FROM users');
   res.json(rows);
@@ -48,7 +68,7 @@ app.delete('/users/:id', async (req, res) => {
   const { id } = req.params;
   const [rows] = await pool.execute('DELETE FROM users WHERE id = ?', [id]);
   res.json(rows);
-});
+}); */
 
 // Start the server
 app.listen(port, () => {
